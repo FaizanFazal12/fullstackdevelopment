@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useTransition } from "react";
 import { signupUser } from "@/actions";
 import { useRouter } from "next/navigation";
@@ -19,7 +18,7 @@ export default function Signup() {
         const result = await signupUser(formData);
         console.log(result.message);
 
-        router.push("/dashboard");
+        // router.push("/dashboard");
       } catch (error) {
         console.error(error.message); 
         setError(error.message);

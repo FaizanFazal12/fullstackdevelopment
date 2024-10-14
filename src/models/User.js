@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true },
   },
   {
-    timestamps: true, // Automatically creates 'createdAt' and 'updatedAt' fields
+    timestamps: true, 
   }
 );
 

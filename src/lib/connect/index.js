@@ -1,4 +1,4 @@
-"use server"
+"use server"; // Ensure this runs in the server environment
 import mongoose from "mongoose";
 
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -14,17 +14,18 @@ if (!cached) {
 }
 
 export async function connectToDatabase() {
+  // Return cached connection if it exists
   if (cached.conn) return cached.conn;
 
+  // Create a new promise for connecting to the database if none exists
   if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    }).then((mongoose) => mongoose).catch(err => {
+    cached.promise = mongoose.connect(MONGODB_URI).catch(err => {
       console.error("Database connection error:", err);
       throw err;
     });
   }
+
+  // Await the promise and cache the connection
   cached.conn = await cached.promise;
   return cached.conn;
 }

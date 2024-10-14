@@ -15,7 +15,6 @@ export default function Login() {
     startTransition(async () => {
       try {
         const result = await loginUser(formData);
-
         if (result.success) {
           router.push("/");
         }
