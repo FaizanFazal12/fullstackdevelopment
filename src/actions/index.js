@@ -18,44 +18,44 @@ export async function authenticate(formData) {
   
 }
 
-export async function signupUser(formData) {
-    "use server"; 
+// export async function signupUser(formData) {
+//     "use server"; 
   
-    const name = formData.get("name");
-    const email = formData.get("email");
-    const password = formData.get("password");
+//     const name = formData.get("name");
+//     const email = formData.get("email");
+//     const password = formData.get("password");
   
-    await connectToDatabase();
+//     await connectToDatabase();
   
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      throw new Error("User already exists!");
-    }
+//     const existingUser = await User.findOne({ email });
+//     if (existingUser) {
+//       throw new Error("User already exists!");
+//     }
   
-    // Hash the password before saving
-    const hashedPassword = await bcrypt.hash(password, 10);
+//     // Hash the password before saving
+//     const hashedPassword = await bcrypt.hash(password, 10);
   
-    const newUser = new User({ name, email, password: hashedPassword });
-    await newUser.save();
+//     const newUser = new User({ name, email, password: hashedPassword });
+//     await newUser.save();
 
 
-      // Generate JWT token
-    const token = jwt.sign({ userId: newUser._id }, JWT_SECRET, { expiresIn: "1d" });
+//       // Generate JWT token
+//     const token = jwt.sign({ userId: newUser._id }, JWT_SECRET, { expiresIn: "1d" });
 
-      cookies().set({
-        name: "token",
-        value: token,
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production", 
-        sameSite: "strict",
-        path: "/", // Make it accessible site-wide
-        maxAge: 24 * 60 * 60, // 1 day
-      });
+//       cookies().set({
+//         name: "token",
+//         value: token,
+//         httpOnly: true,
+//         secure: process.env.NODE_ENV === "production", 
+//         sameSite: "strict",
+//         path: "/", // Make it accessible site-wide
+//         maxAge: 24 * 60 * 60, // 1 day
+//       });
 
     
   
-    return { success: true, message: "User registered successfully!" };
-  }
+//     return { success: true, message: "User registered successfully!" };
+//   }
 
 
 
@@ -64,7 +64,12 @@ export async function loginUser(formData) {
   const email = formData.get("email");
   const password = formData.get("password");
 
+  if ( !email || !password) {
+    throw new Error("All fields are required!");
+  }
   await connectToDatabase();
+
+  
 
   const user = await User.findOne({ email });
   if (!user) {
@@ -77,7 +82,7 @@ export async function loginUser(formData) {
   }
 
   // Generate a JWT token
-  const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "1d" });
+  const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: "1d" });
 
   cookies().set({
     name: "token",
@@ -90,4 +95,49 @@ export async function loginUser(formData) {
   });
 
   return { success: true, token, message: "Login successful!" };
+}
+
+export async function signupUser(formData) {
+  "use server";
+
+  const name = formData.get("name");
+  const email = formData.get("email");
+  const password = formData.get("password");
+
+  if (!name || !email || !password) {
+    throw new Error("All fields are required!");
+  }
+
+  await connectToDatabase();
+
+  try {
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      throw new Error("User already exists!");
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = new User({ name, email, password: hashedPassword });
+    await newUser.save();
+
+    const token = jwt.sign({ userId: newUser._id }, JWT_SECRET, {
+      expiresIn: "1d",
+    });
+
+    cookies().set({
+      name: "token",
+      value: token,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      maxAge: 24 * 60 * 60,
+    });
+
+    return { success: true, message: "User registered successfully!" };
+  } catch (error) {
+    console.error("Signup Error:", error.message);
+    throw new Error(error.message || "Something went wrong during signup.");
+  }
 }

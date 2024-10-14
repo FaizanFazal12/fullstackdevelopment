@@ -1,26 +1,28 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { signupUser } from "@/actions";
 import { useRouter } from "next/navigation";
 
 export default function Signup() {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
+    setError("");
 
     startTransition(async () => {
       try {
         const result = await signupUser(formData);
         console.log(result.message);
 
-        // Redirect the user to the dashboard after successful signup
         router.push("/dashboard");
       } catch (error) {
-        console.error(error.message); // Handle error messages
+        console.error(error.message); 
+        setError(error.message);
       }
     });
   };
@@ -32,6 +34,11 @@ export default function Signup() {
           Create an Account
         </h2>
         <form onSubmit={handleSubmit} className="space-y-6">
+       {error && (
+            <div className="text-red-600 text-sm font-semibold text-center">
+              {error}
+            </div>
+          )}
           <div>
             <label
               htmlFor="name"

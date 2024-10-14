@@ -1,21 +1,27 @@
 "use client";
 
 import { loginUser } from "@/actions";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Login() {
   const [isPending, startTransition] = useTransition();
-
+  const [error, setError] = useState("");
+  const router = useRouter();
   const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-
+    setError("");
     startTransition(async () => {
       try {
         const result = await loginUser(formData);
-        console.log(result.message); 
+
+        if (result.success) {
+          router.push("/");
+        }
       } catch (error) {
         console.error(error.message);
+        setError(error.message);
       }
     });
   };
@@ -27,6 +33,11 @@ export default function Login() {
           Login to your account
         </h2>
         <form onSubmit={handleSubmit} className="space-y-6">
+          {error && (
+            <div className="text-red-600 text-sm font-semibold text-center">
+              {error}
+            </div>
+          )}
           <div>
             <label
               htmlFor="email"
@@ -65,9 +76,7 @@ export default function Login() {
             type="submit"
             disabled={isPending}
             className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-white ${
-              isPending
-                ? "bg-indigo-300"
-                : "bg-indigo-600 hover:bg-indigo-700"
+              isPending ? "bg-indigo-300" : "bg-indigo-600 hover:bg-indigo-700"
             } focus:outline-none focus:ring-2 focus:ring-indigo-500`}
           >
             {isPending ? "Logging in..." : "Login"}
