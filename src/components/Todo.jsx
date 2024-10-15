@@ -8,6 +8,10 @@ export default function Todo() {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const [error, setError] = useState("");
+  const [form, setForm] = useState({
+    name: "",
+    description: "",
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,12 +23,21 @@ export default function Todo() {
         const result = await createTodo(formData);
         if (result.success) {
           toast.success(result.message);
+          setForm({
+            name: "",
+            description: "",
+          });
         }
       } catch (error) {
         toast.error(error.message);
         setError(error.message);
       }
     });
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
   return (
     <div>
@@ -46,6 +59,8 @@ export default function Todo() {
                   type="text"
                   id="name"
                   name="name"
+                  value={form.name}
+                  onChange={handleChange}
                   className="w-full bg-white rounded border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 text-base outline-none text-gray-700 py-1 px-3 leading-8 transition-colors duration-200 ease-in-out"
                 />
               </div>
@@ -60,6 +75,8 @@ export default function Todo() {
                   type="description"
                   id="description"
                   name="description"
+                  value={form.description}
+                  onChange={handleChange}
                   className="w-full bg-white rounded border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 text-base outline-none text-gray-700 py-1 px-3 leading-8 transition-colors duration-200 ease-in-out"
                 />
               </div>
@@ -67,7 +84,7 @@ export default function Todo() {
                 type="submit"
                 className="text-white bg-indigo-500 border-0 py-2 px-8 focus:outline-none hover:bg-indigo-600 rounded text-lg"
               >
-                Button
+                Add Todo
               </button>
               <p className="text-xs text-gray-500 mt-3">
                 Literally you probably haven't heard of them jean shorts.

@@ -1,19 +1,23 @@
 "use client"; 
+import { getUserToken  ,deleteUserToken} from "@/actions";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-
+import { useRouter } from "next/navigation";
 export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
-    const token = document.cookie.includes("token"); // Change this to localStorage if needed
-    setIsLoggedIn(!!token);
+    getUserToken().then((token) => {
+      setIsLoggedIn(!!token);
+    });
   }, []);
 
   const handleLogout = () => {
-    // Clear the token from cookies/localStorage (mock logout)
-    document.cookie = "token=; Max-Age=0; path=/"; // Clear cookie
-    setIsLoggedIn(false); // Update state
+     deleteUserToken();
+    setIsLoggedIn(false);
+    router.push('/login')
+
   };
 
   return (

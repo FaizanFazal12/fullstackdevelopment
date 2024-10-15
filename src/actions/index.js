@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import User from "@/models/User";
 import { connectToDatabase } from "@/lib/connect";
 import { cookies } from "next/headers";
+
 import jwt from "jsonwebtoken";
 import Todo from "@/models/Todo";
 
@@ -33,7 +34,7 @@ export async function createTodo(formData) {
       user: userId,
     });
 
-    return { success: true , message: "Todo Created successfully" };
+    return { success: true, message: "Todo Created successfully" };
   } catch (error) {
     console.error("Create Todo Error:", error.message);
     throw new Error(
@@ -130,4 +131,25 @@ export async function loginUser(formData) {
   // });
 
   return { success: true, message: "Login successful!" };
+}
+
+export async function getUserToken() {
+  const cookieStore = cookies();
+  const token = cookieStore.get("user_id")?.value;
+  return token || null;
+}
+export async function deleteUserToken() {
+  const cookieStore = cookies();
+  const token = cookieStore.delete("user_id")?.value;
+  return token || null;
+}
+export async function getAllTodos() {
+  const userId = cookies().get("user_id")?.value;
+
+  await connectToDatabase();
+
+  const todos = await Todo.find({ user: userId });
+
+
+  return todos;
 }
