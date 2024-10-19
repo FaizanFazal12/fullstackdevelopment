@@ -17,8 +17,9 @@ export default function Signup() {
       try {
         const result = await signupUser(formData);
         console.log(result.message);
-
-        // router.push("/dashboard");
+        //refresh page
+        window.location.href = "/";
+        // router.push("/");
       } catch (error) {
         console.error(error.message); 
         setError(error.message);

@@ -7,6 +7,7 @@ export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const router = useRouter();
 
+
   useEffect(() => {
     getUserToken().then((token) => {
       setIsLoggedIn(!!token);

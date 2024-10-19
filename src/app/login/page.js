@@ -11,12 +11,16 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
+  
     setError("");
     startTransition(async () => {
       try {
         const result = await loginUser(formData);
         if (result.success) {
-          router.push("/");
+          
+          // refresh the page
+          window.location.href = "/";
+          // router.push("/");
         }
       } catch (error) {
         console.error(error.message);

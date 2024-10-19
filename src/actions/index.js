@@ -1,155 +1,158 @@
 "use server";
-import bcrypt from "bcryptjs";
-import User from "@/models/User";
-import { connectToDatabase } from "@/lib/connect";
 import { cookies } from "next/headers";
+import { comparePassword, generateToken, setTokenCookie, hashPassword, verifyToken } from "@/lib/auth";
 
-import jwt from "jsonwebtoken";
 import Todo from "@/models/Todo";
+import { PrismaClient } from "@prisma/client";
 
-const JWT_SECRET = process.env.JWT_SECRET;
+const prisma = new PrismaClient();
+
+
+
 
 export async function createTodo(formData) {
-  const name = formData.get("name");
+  const title = formData.get("title");
   const description = formData.get("description");
+  const cookieStore = cookies();
+  const token = cookieStore.get("token")?.value;
+
+  const decoded = verifyToken(token);
+  if (!decoded) {
+    throw new Error("User is not authenticated.");
+  }
 
   try {
-    // Connect to the database
-    await connectToDatabase();
-
-    // Retrieve user ID from cookies
-    const userId = cookies().get("user_id")?.value;
-
-    if (!name || !description) {
-      throw new Error("All fields are required");
-    }
-
-    if (!userId) {
-      throw new Error("User is not authenticated.");
-    }
-
-    await Todo.create({
-      name,
-      description,
-      user: userId,
+    const todo = await prisma.todo.create({
+      data: {
+        title,
+        description,
+        userId: decoded.userId, // Link to the user from the token
+      },
     });
 
-    return { success: true, message: "Todo Created successfully" };
+    return { success: true, message: "Todo created successfully!", todo };
   } catch (error) {
-    console.error("Create Todo Error:", error.message);
-    throw new Error(
-      error.message || "Something went wrong while creating the Todo."
-    );
+    console.error("Error creating todo:", error);
+    throw new Error("Error creating todo. Please try again.");
   }
 }
-export async function authenticate(formData) {
-  console.log(formData);
-}
 
-export async function signupUser(formData) {
-  "use server";
+export async function getTodo(formData) {
 
-  const name = formData.get("name");
-  const email = formData.get("email");
-  const password = formData.get("password");
+  const cookieStore = cookies();
+  const token = cookieStore.get("token")?.value;
 
-  await connectToDatabase();
-
-  const existingUser = await User.findOne({ email });
-  if (existingUser) {
-    throw new Error("User already exists!");
+  const decoded = verifyToken(token);
+  if (!decoded) {
+    throw new Error("User is not authenticated.");
   }
 
-  // Hash the password before saving
-  const hashedPassword = await bcrypt.hash(password, 10);
+  try {
+    const todo = await prisma.todo.findUnique({where:{id:decoded.userId}});
+    return todo
 
-  const newUser = new User({ name, email, password: hashedPassword });
-  await newUser.save();
-
-  cookies().set({
-    name: "user_id",
-    value: newUser._id.toString(), // Store user ID as a string
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    path: "/",
-    maxAge: 24 * 60 * 60, // 1 day
-  });
-
-  //   // Generate JWT token
-  // const token = jwt.sign({ userId: newUser._id }, JWT_SECRET, { expiresIn: "1d" });
-
-  //   cookies().set({
-  //     name: "token",
-  //     value: token,
-  //     httpOnly: true,
-  //     secure: process.env.NODE_ENV === "production",
-  //     sameSite: "strict",
-  //     path: "/", // Make it accessible site-wide
-  //     maxAge: 24 * 60 * 60, // 1 day
-  //   });
-
-  return { success: true, message: "User registered successfully!" };
-}
-
-export async function loginUser(formData) {
-  const email = formData.get("email");
-  const password = formData.get("password");
-
-  await connectToDatabase();
-
-  const user = await User.findOne({ email });
-  if (!user) {
-    throw new Error("Invalid email or password!");
+  } catch (error) {
+    console.error("Error creating todo:", error);
+    throw new Error("Error creating todo. Please try again.");
   }
-
-  const isPasswordValid = await bcrypt.compare(password, user.password);
-  if (!isPasswordValid) {
-    throw new Error("Invalid email or password!");
-  }
-
-  cookies().set({
-    name: "user_id",
-    value: user._id.toString(), // Store user ID as a string
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    path: "/",
-    maxAge: 24 * 60 * 60, // 1 day
-  });
-  // Generate a JWT token
-  // const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "1d" });
-
-  // cookies().set({
-  //   name: "token",
-  //   value: token,
-  //   httpOnly: true, // Prevent access via JavaScript (secure)
-  //   secure: process.env.NODE_ENV === "production", // Use secure cookies in production
-  //   sameSite: "strict", // Prevent CSRF attacks
-  //   path: "/", // Make it accessible site-wide
-  //   maxAge: 24 * 60 * 60, // 1 day
-  // });
-
-  return { success: true, message: "Login successful!" };
 }
-
 export async function getUserToken() {
   const cookieStore = cookies();
-  const token = cookieStore.get("user_id")?.value;
-  return token || null;
+  const token = cookieStore.get("token")?.value
+  console.log(token  )
+
+  if(!token){
+    return null
+  }
+  
+  const decoded = verifyToken(token);
+  if(!decoded){
+    return  null;
+  }
+
+  console.log(decoded)
+
+  const user = await prisma.user.findUnique({where:{id:decoded.userId}});
+
+  console.log(user  )
+  if(!user){
+    return  null;
+  }
+
+  return user
 }
 export async function deleteUserToken() {
   const cookieStore = cookies();
-  const token = cookieStore.delete("user_id")?.value;
+  const token = cookieStore.delete("token")?.value;
   return token || null;
 }
 export async function getAllTodos() {
-  const userId = cookies().get("user_id")?.value;
+  const cookieStore = cookies();
+  const token = cookieStore.get("token")?.value;
 
-  await connectToDatabase();
+  const decoded = verifyToken(token);
 
-  const todos = await Todo.find({ user: userId });
+  const todos = await prisma.todo.findMany({ where: { userId:decoded.userId } });
 
 
   return todos;
+}
+export async function updateTodo(id, { title, description }) {
+  try {
+    const updatedTodo = await prisma.todo.update({
+      where: { id },
+      data: { title, description },
+    });
+    return updatedTodo;
+  } catch (error) {
+    console.error("Error updating todo:", error);
+    throw new Error("Unable to update todo");
+  }
+}
+
+export async function deleteTodo(id) {
+  try {
+    await prisma.todo.delete({
+      where: { id },
+    });
+  } catch (error) {
+    console.error("Error deleting todo:", error);
+    throw new Error("Unable to delete todo");
+  }
+}
+export async function loginUser(formData) {
+  const email = formData.get("email")
+  const password = formData.get("password")
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) throw new Error("Invalid credentials");
+
+  const isValid = await comparePassword(password, user.password);
+  if (!isValid) throw new Error("Invalid credentials");
+
+  const token = generateToken(user.id);
+  setTokenCookie(token); // Store token in cookie
+  return { success: true, message: "Login successful!" };
+
+}
+export async function signupUser(formData) {
+  const email = formData.get("email");
+  const password = formData.get("password");
+  const name = formData.get("name");
+
+  const checkemailexist = await prisma.user.findUnique({ where: { email } });
+  if (checkemailexist) throw new Error("Email is already taken");
+
+  const hashpassword = await hashPassword(password);
+
+  const user = await prisma.user.create({data: {
+    email,
+    password: hashpassword,
+    name: name
+  }})
+
+  const token = generateToken(user.id);
+  setTokenCookie(token); 
+  return { success: true, message: "User registered successful!" }
+
 }

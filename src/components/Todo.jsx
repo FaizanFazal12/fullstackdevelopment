@@ -9,7 +9,7 @@ export default function Todo() {
   const router = useRouter();
   const [error, setError] = useState("");
   const [form, setForm] = useState({
-    name: "",
+    title: "",
     description: "",
   });
 
@@ -24,7 +24,7 @@ export default function Todo() {
         if (result.success) {
           toast.success(result.message);
           setForm({
-            name: "",
+            title: "",
             description: "",
           });
         }
@@ -53,13 +53,13 @@ export default function Todo() {
                   htmlFor="name"
                   className="leading-7 text-sm text-gray-600"
                 >
-                  Name
+                  Title
                 </label>
                 <input
                   type="text"
-                  id="name"
-                  name="name"
-                  value={form.name}
+                  id="title"
+                  name="title"
+                  value={form.title}
                   onChange={handleChange}
                   className="w-full bg-white rounded border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 text-base outline-none text-gray-700 py-1 px-3 leading-8 transition-colors duration-200 ease-in-out"
                 />
