@@ -22,7 +22,7 @@ export default async function Home() {
   <Todo />
 
   <p className="text-center my-4 text-lg text-gray-700">
-    To view all your tasks, click the button below. You'll be taken to a list where you can manage your todos!
+    To view all your tasks, click the button below. You&apos;ll be taken to a list where you can manage your todos!
   </p>
 
   <Link href="/todos" className="block text-center  text-indigo-500 hover:underline mt-4">
